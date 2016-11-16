@@ -32,6 +32,10 @@ from lib.cuckoo.common.config import Config
 from lib.cuckoo.common.constants import CUCKOO_ROOT
 import modules.processing.network as network
 
+# worse-dev
+import pprint
+import lib.cuckoo.common.compareprocs as cmp_common
+
 TASK_LIMIT = 25
 
 # Used for displaying enabled config options in Django UI
@@ -66,6 +70,8 @@ if enabledconf["elasticsearchdb"]:
          timeout = 60)
 
 maxsimilar = int(Config("reporting").malheur.maxsimilar)
+# worse-dev
+maxsimilarproc = int(Config("reporting").worseheur.maxsimilarproc)
 
 # Conditional decorator for web authentication
 class conditional_login_required(object):
@@ -98,7 +104,9 @@ def get_analysis_info(db, id=-1, task=None):
                        "info.custom":1, "info.shrike_msg":1, "malscore": 1, "malfamily": 1,
                        "network.pcap_sha256": 1,
                        "mlist_cnt": 1, "f_mlist_cnt": 1, "info.package": 1, "target.file.clamav": 1,
-                       "suri_tls_cnt": 1, "suri_alert_cnt": 1, "suri_http_cnt": 1, "suri_file_cnt": 1
+                       "suri_tls_cnt": 1, "suri_alert_cnt": 1, "suri_http_cnt": 1, "suri_file_cnt": 1,
+#worse-dev
+                       "behavior.processtree": 1
                    }, sort=[("_id", pymongo.DESCENDING)]
                )
 
@@ -153,6 +161,9 @@ def get_analysis_info(db, id=-1, task=None):
 
         if "display_shrike" in enabledconf and enabledconf["display_shrike"] and rtmp.has_key("info") and rtmp["info"].has_key("shrike_msg") and rtmp["info"]["shrike_msg"]:
             new["shrike_msg"] = rtmp["info"]["shrike_msg"]
+#worse-dev
+        if rtmp.has_key("behavior") and rtmp["behavior"].has_key("processtree") and rtmp["behavior"]["processtree"]:
+            new["processtree"] = rtmp["behavior"]["processtree"]
 
         if settings.MOLOCH_ENABLED:
             if settings.MOLOCH_BASE[-1] != "/":
@@ -768,7 +779,7 @@ def report(request, task_id):
             with open(malheur_file, "r") as malfile:
                 for line in malfile:
                     if line[0] == '#':
-                            continue
+                        continue
                     parts = line.strip().split(' ')
                     classname = parts[1]
                     if classname != "rejected":
@@ -795,13 +806,220 @@ def report(request, task_id):
         except:
             pass
 
+    # worseheur logic
+    wsimilarinfo = []
+    nsimilar = 0
+    if enabledconf["worseheur"]:
+
+        # read the set of near prototypes just once
+        near_path = os.path.join(CUCKOO_ROOT, "storage", "worseheur", "near.txt")
+        near_clsts = None
+        with open(near_path) as json_data:
+            near_clsts = json.load(json_data)
+
+        similar_samples = {}
+        for proc in report["behavior"]["processes"]:
+
+            pid = proc["process_id"]
+            pname = proc["process_name"]
+            proc_id = task_id + "-" + str(pid)
+            clst_dir = os.path.join(CUCKOO_ROOT, "storage", "worseheur",
+                "members", proc_id)
+            dist_file = os.path.join(clst_dir, "distances.txt")
+
+            # rejected members do not have an own dir
+            if not os.path.isfile(dist_file):
+                continue
+
+            # read which processes belong to this proc's cluster
+            nearest =  read_nearest_procs(dist_file, proc_id)
+            buf = sorted(nearest, key=lambda z: z["dist"])
+            nearest = buf
+
+            # obtain the ID of the cluster
+            clst_info = os.path.join(clst_dir, "INFO.txt")
+            clst_id = None
+            with open(clst_info, "r") as info:
+                clst_id = info.read()
+
+            # obtain the available details about each similar process
+            similar = []
+            for i in range(0, len(nearest)):
+                simid = nearest[i]["id"]
+                simdist = nearest[i]["dist"]
+                simproc = worseheur_get_simproc_details(db, simid)
+                simproc["simscore"] = cmp_common.normalise_score(simdist)
+                
+                # do not add tasks for this same sample
+                similar.append(simproc)
+
+                if len(similar) >= maxsimilarproc:
+                    break
+            
+            if len(similar) > 0:
+                nsimilar += len(similar)
+                balloons = calculate_balloons(near_clsts, proc_id)
+                similar_samples[pid] = {
+                                        "sid": report["info"]["id"],
+                                        "pid": pid,
+                                        "pname": pname,
+                                        "similar": similar,
+                                        "total": len(nearest),
+                                        "balloons": balloons,
+                }
+
+                # Codexgigas
+                if enabledconf["codexgigas"]:
+                    similar_samples[pid]["clst_id"] = clst_id
+
+        # Sort the generated list according to the process tree
+        for tree_pid in cmp_common.worseheur_tree_to_pidlist_iter(
+            report["behavior"]["processtree"]):
+            if tree_pid in similar_samples:
+                wsimilarinfo.append(similar_samples[tree_pid])
+
     return render(request, "analysis/report.html",
                              {"analysis": report,
                               "domainlookups": domainlookups,
                               "iplookups": iplookups,
                               "similar": similarinfo,
+                              "wsimilar": wsimilarinfo,
+                              "nsimilar": nsimilar,
                               "settings": settings,
                               "config": enabledconf})
+
+def calculate_balloons(near, pid):
+    """ Calculates the graphical aspects for the balloons (one per cluster)
+        that must be included within the graph.
+        @return a list of balloons sorted from nearest to furthest
+    """
+
+    MAX_N_BALLOONS = 4 # max number of balloons to include
+    MIN_SIZE = 2 # size of the smallest cluster
+    MIN_SIZE_PX = 10 # min size in pixels
+    MAX_SIZE_PX = 150 # max size in pixels
+    ret = []
+
+    if pid not in near:
+        return []
+
+    max_size = MIN_SIZE * MAX_SIZE_PX / MIN_SIZE_PX 
+
+    # this list comes sorted
+    near_clsts = near[pid]
+    included = {}
+    for clst in near_clsts:
+        
+        clst_score = clst[0]
+        clst_id = clst[1]
+        clst_proto = clst[2]
+        clst_size = clst[3]
+
+        if clst_id in included: 
+            continue
+
+        if len(ret) >= MAX_N_BALLOONS:
+            break
+        
+        # this is a % and must be between 5% and 95%
+        distance = 5 + int((100 - clst_score) * (95 - 5)/100)
+        # calculate the diameter for the balloon (in px)
+        if clst_size > max_size:
+            diameter = MAX_SIZE_PX
+        elif clst_size < MIN_SIZE:
+            diameter = MIN_SIZE_PX
+        else:
+            diameter = int(clst_size * MAX_SIZE_PX/ max_size)
+
+        # random color
+        import random
+        r = lambda: random.randint(0,255)
+        color = '#%02X%02X%02X' % (r(),r(),r())
+        
+        # Title for each balloon
+        title = "Score: %d\n%d elements\nPrototype: %s"%(clst_score,
+            clst_size, clst_proto)
+
+        # Split the prototype ID
+        sid,pid = clst_proto.split('-')
+
+        ret.append({"color":color,"size":diameter, "x":distance,
+            "y":50, "title":title, "prio":(max_size - clst_size),
+            "margin":int(diameter/2), "sid":sid, "pid":pid})
+
+        included[clst_id] = True
+
+    return ret
+    
+
+def read_nearest_procs(dist_file, proc_id):
+    """ Reads the distances file to figure out how far other neighbours are
+        from a given process
+        @return a list, which contains a dictionary for each neighbour in the
+        cluster. Each dict contains a process id and a distance
+    """
+    ret = []
+
+    if not os.path.isfile(dist_file):
+        return []
+
+    try:
+        ourparts = None
+        ourind = -1
+
+        with open(dist_file, "r") as distfile:
+            # find our process' line
+            members = []
+            i = 0
+            for line in distfile:
+                if line[0] == '#':
+                    continue
+                parts = line.strip().split(' ')
+                members.append(parts[0])
+                if parts[0] == proc_id:
+                    ourparts = parts
+                    ourind = i
+                i = i + 1
+        
+        # go over all the distances of our process
+        for j in range(2, len(ourparts)):
+            if j-2 == ourind:
+                continue
+            dist = float(ourparts[j])
+            ret.append({"id": members[j-2], "dist": dist})
+
+    except Exception as e:
+        pass
+
+    return ret
+
+
+def worseheur_get_simproc_details(db, simid):
+    """ Gets some DB information about a similar process """
+
+    sid = int(simid.split("-")[0])
+    pid = int(simid.split("-")[1])
+
+    info = get_analysis_info(db, id=sid)
+    simproc = {}
+    simproc["pid"] = pid
+
+    # get the sample's process names
+    if info.has_key("processtree"):
+        simproc["pname"] = cmp_common.worseheur_get_processname_iter(
+            info["processtree"], pid)
+    else:
+        simproc["pname"] = None
+
+    simproc["analysisid"] = info["id"] if info.has_key("id") else None
+    simproc["sid"] = sid
+    simproc["samplemd5"] = (info["sample"]["md5"] if
+        info["sample"].has_key("md5") else None)
+    simproc["status"] = info["status"]
+    simproc["malscore"] = info["malscore"] if info.has_key("malscore") else None
+    simproc["malfamily"] = info["malfamily"] if info.has_key("malfamily") else None
+
+    return simproc
 
 @require_safe
 @conditional_login_required(login_required, settings.WEB_AUTHENTICATION)

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="{{ STATIC_URL }}css/codexgigas.css" rel="stylesheet">
+
+<p style="margin-bottom: 10px;"><img src="{{ STATIC_URL }}graphic/cuckoo.png" /></p>
+<hr/>
+<div class="row">
+    <div class="col-md-12" style="margin:auto">
+        <div class="panel panel-primary indicator-summary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Cluster</h3>
+            </div>
+            <table class="table table-striped table-bordered" style="table-layout: fixed;">
+                <tr>
+                    <td style="width:15%">Number of tasks</td>
+                    <td>{{summary.n_tasks}}</td>
+                </tr>
+                <tr>
+                    <td style="width:15%">Task IDs</td>
+                    <td>{{summary.tasks}}</td>
+                </tr>
+                <tr>
+                    <td style="width:15%">Number of samples</td>
+                    <td>{{summary.n_samples}}</td>
+                </tr>
+                <tr>
+                    <td style="width:15%">Samples</td>
+                    <td>
+                    <table class="members-table"><tr>
+                    {%for hash in summary.hashes %}
+                        {%if forloop.counter0|divisibleby:4%}</tr><tr>{%endif%}
+                        <td><a href="{% url "report" hash.id %}">{{hash.sha1}}</a></td>
+                    {%endfor%}
+                    </tr></table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:15%">Malware families associated</td>
+                    <td>{{summary.families}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% if summary.n_samples == 1 %}
+<div class="alert alert-info" style="text-align: center;"><b>Only one sample in this cluster</b></div>
+{% else %}
+<div class="row">
+    {%if indicators.version %}
+    <div class="col-md-6">
+        {% include "codexgigas/_version.html" with info=indicators.version total=summary.n_samples%}
+    </div>
+    {% endif %}
+    {%if indicators.strings %}
+    <div class="col-md-6">
+        {% include "codexgigas/_panel.html" with info=indicators.strings title="Strings" total=summary.n_samples%}
+    </div>
+    {% endif %}
+    {%if indicators.resources %}
+    <div class="col-md-6">
+        {% include "codexgigas/_panel.html" with info=indicators.resources title="Resources" total=summary.n_samples%}
+    </div>
+    {% endif %}
+    {%if indicators.sections %}
+    <div class="col-md-6">
+        {% include "codexgigas/_panel.html" with info=indicators.sections title="Sections" total=summary.n_samples%}
+    </div>
+    {% endif %}
+    {%if indicators.imports %}
+    <div class="col-md-6">
+        {% include "codexgigas/_panel.html" with info=indicators.imports title="Imports" total=summary.n_samples%}
+    </div>
+    {% endif %}
+    {%if indicators.headers %}
+    <div class="col-md-6">
+        {% include "codexgigas/_headers.html" with info=indicators.headers total=summary.n_samples%}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

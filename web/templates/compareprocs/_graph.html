@@ -1,0 +1,23 @@
+<div class="simgrp-graph">
+    <div class="graph-content">
+    {% for b in balloons %}
+        <a href="{% url "compareprocs_both" proc.sid proc.pid b.sid b.pid %}">
+        <div class="balloon" title="{{b.title}}"
+            style="background-color: {{b.color}};
+                width: {{b.size}}px; height: {{b.size}}px;
+                left: {{b.x}}%; bottom: {{b.y}}%; z-index: {{b.prio}};
+                margin-left: -{{b.margin}}px; margin-bottom: -{{b.margin}}px">
+        </div>
+        </a>
+    {% endfor %}
+    </div>
+    <div class="graph-legend">
+        <table>
+            <tr>
+                <td>100</td><td>90</td><td>80</td><td>70</td><td>60</td>
+                <td>50</td><td>40</td><td>30</td><td>20</td><td>10</td><td>0</td>
+            </tr>
+        </table>
+        <div class="legend-label"><b>Score distance</b></div>
+    </div>
+</div>

@@ -1,0 +1,44 @@
+/* Shared indicators containers */
+.indicator-container {
+    padding: 10px;
+    float: left;
+    width: 50%;
+}
+.indicator-content {
+    padding: 10px;
+}
+.indicator-summary {
+    margin: 0 100px 30px 100px;
+}
+
+/* Cell headers */
+.field {
+    white-space: nowrap;
+    overflow: hidden;
+}
+.field.hname {
+    width: 25%;
+}
+.field.hfrequency {
+    width: 15%;
+}
+.field.name {
+    background-color: white;
+}
+.field > .freq-label {
+    width: 100%;
+    height: 100%;
+    padding: 3px;
+}
+.freq-label.relevant {
+    background-color: red;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 5px;
+}
+/* Summary */
+.members-table {
+    width: 100%;
+    height: 100%;
+}

@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="{{ STATIC_URL }}css/compareprocs.css" rel="stylesheet">
+
+<script type='text/javascript'>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>
+
+<script type='text/javascript'>
+function highlight_links_on(id, prefix, links) {
+    document.getElementById(id).classList.add("part-highlighted");
+    for (var i = 0;i < links.length; i++) {
+        document.getElementById(prefix + links[i]).classList.add("part-highlighted");
+    }
+}
+function highlight_links_off(id, prefix, links) {
+    document.getElementById(id).classList.remove("part-highlighted");
+    for (var i = 0;i < links.length; i++) {
+        document.getElementById(prefix + links[i]).classList.remove("part-highlighted");
+    }
+}
+
+function highlight_parts_off(prefix, id, prefix_links, links) {
+
+    tg_container = document.getElementById(prefix + id + "_container");
+    tg_calls = tg_container.getElementsByClassName("seq-call");
+    for (var j=0; j < tg_calls.length; j++) {
+        tg_calls[j].classList.remove("call-highlighted");
+    }
+
+    for (var i=0; i < links.length; i++) {
+        lnk_container = document.getElementById(prefix_links + links[i] + "_container");
+        lnk_spans = lnk_container.getElementsByClassName("seq-call");
+        for (var j=0; j < lnk_spans.length; j++) {
+            lnk_spans[j].classList.remove("call-highlighted");
+        }
+    }
+}
+
+function highlight_parts_on(prefix, id, prefix_links, links) {
+    high_tg = {}
+    high_lnk = {}
+
+    tg_container = document.getElementById(prefix + id + "_container");
+    tg_calls = tg_container.getElementsByClassName("seq-call");
+    for (var j=0; j < tg_calls.length; j++) {
+        // first class name must be 'call_<id>'
+        high_tg[tg_calls[j].classList[0]] = true;
+    }
+
+    for (var i=0; i < links.length; i++) {
+        lnk_container = document.getElementById(prefix_links + links[i] + "_container");
+        lnk_spans = lnk_container.getElementsByClassName("seq-call");
+        for (var j=0; j < lnk_spans.length; j++) {
+            high_lnk[lnk_spans[j].classList[0]] = true;
+            if (high_tg[lnk_spans[j].classList[0]]) {
+                lnk_spans[j].classList.add("call-highlighted");
+            }
+        }
+    }
+
+    for (var j=0; j < tg_calls.length; j++) {
+        if (high_lnk[tg_calls[j].classList[0]]) {
+            tg_calls[j].classList.add("call-highlighted");
+        }
+    }
+}
+
+function select_part(prefix, id, prefix_links, links) {
+
+    /* Unselect previous */
+    if (id_selected) {
+
+        highlight_parts_off(prefix_selected, id_selected, prefix_links_selected, links_selected);
+
+        document.getElementById(prefix_selected + id_selected).classList.remove("part-selected");
+        document.getElementById(prefix_selected + id_selected + "_container").classList.remove("container-selected");
+        for (var i = 0; i < links_selected.length; i++) {
+            document.getElementById(prefix_links_selected + links_selected[i]).classList.remove("part-selected");
+            document.getElementById(prefix_links_selected + links_selected[i] + "_container").classList.remove("container-selected");
+        }
+    }
+    
+    /* New selection */
+    prefix_selected = prefix;
+    id_selected = id;
+    links_selected = links;
+    prefix_links_selected = prefix_links;
+    document.getElementById(prefix_selected + id_selected).classList.add("part-selected");
+    container = document.getElementById(prefix_selected + id_selected + "_container");
+    container.classList.add("container-selected");
+    document.getElementById(prefix + "scroll").scrollTop = container.offsetTop;
+
+    /* Mark the containers as selected */
+    for (var i = 0; i < links_selected.length; i++) {
+        document.getElementById(prefix_links + links_selected[i]).classList.add("part-selected");
+        links_container = document.getElementById(prefix_links + links_selected[i] + "_container");
+        links_container.classList.add("container-selected");
+        if (i == 0) {
+            document.getElementById(prefix_links + "scroll").scrollTop = links_container.offsetTop;
+        }
+    }
+
+    /* Highlight the calls within the containers */
+    highlight_parts_on(prefix, id, prefix_links, links);
+
+    document.getElementById("content-pane").classList.add("some-selected");
+}
+
+var prefix_selected = null;
+var id_selected = null;
+var prefix_links_selected = null;
+var links_selected = null;
+
+</script>
+
+<p style="margin-bottom: 10px;"><img src="{{ STATIC_URL }}graphic/cuckoo.png" /></p>
+<hr/>
+<div class="row">
+    <div class="col-md-6 info-header">
+        {% include "compareprocs/_info.html" with record=left %}
+    </div>
+    <div class="col-md-6 info-header">
+        {% include "compareprocs/_info.html" with record=right %}
+    </div>
+</div>
+<div class="row" id="content-pane">
+    <div class="col-md-5">
+        <div class="seq-container" id="l_it_scroll">
+            {% for tid, blck in left.sequence %}
+            <div class="blck-calls">
+            {% for part in blck.parts %}
+                <div class="part-container" id="l_it_{{part.id}}_container">
+                <table>
+                {% for args,body in part.calls %}
+                    <tr class="call_{{args.cid}} cat_{{args.cat}} seq-call">
+                        <td class="call-cat">{{body.0}}</td>
+                        <td class="call-event">{{body.1}}</td>
+                        <td class="call-body">{{body.2}}</td>
+                    </tr>
+                {% endfor %}
+                </table>
+                </div>
+            {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-2 nav-procbar">
+        <div class="procbar-container left">
+        <table class="procbar">
+            {% for tid, blck in left.sequence %}
+            <tr>
+            {% for i in left.blck_lvls %}
+                {% if forloop.counter0 != blck.lvl %}
+                    <td class="blck-container"></td>
+                {% else %}
+                    <td class="blck-container" style="height: {{blck.height}}%;">
+                        <div class="blck-label" title="Thread {{tid}}"></div>
+                        <table class="blck-parts">
+                        {% for part in blck.parts %}
+                        <tr>
+                            <td
+                                onmouseover="highlight_links_on('l_it_{{part.id}}', 'r_it_', {{part.links}})"
+                                onmouseout="highlight_links_off('l_it_{{part.id}}', 'r_it_', {{part.links}})"
+                                style="height: {{part.height}}%;"
+                                class=" procbar-part
+                                        {% if part.simscore >= 90 %}
+                                        similar90
+                                        {% elif part.simscore >= 80 %}
+                                        similar80
+                                        {% elif part.simscore >= 70 %}
+                                        similar70
+                                        {% elif part.simscore >= 60 %}
+                                        similar60
+                                        {% elif part.simscore >= 50 %}
+                                        similar50
+                                        {% elif part.simscore >= 40 %}
+                                        similar40
+                                        {% elif part.simscore >= 30 %}
+                                        similar30
+                                        {% elif part.simscore >= 20 %}
+                                        similar20
+                                        {% elif part.simscore >= 10 %}
+                                        similar10
+                                        {% else %}
+                                        similar0
+                                        {% endif %}"
+                                       data-toggle="tooltip" data-placement="top" >
+                                <a href="javascript:;" onclick="select_part('l_it_', '{{part.id}}', 'r_it_', {{part.links}})">
+                                    <div id="l_it_{{part.id}}" style="height:100%;width:100%">
+                                    </div>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </table>
+                    </td>
+                {% endif %}
+            {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+        <div class="procbar-container right">
+        <table class="procbar">
+            {% for tid, blck in right.sequence %}
+            <tr>
+            {% for i in right.blck_lvls %}
+                {% if forloop.counter0 != blck.lvl %}
+                    <td class="blck-container"></td>
+                {% else %}
+                    <td class="blck-container" style="height: {{blck.height}}%;">
+                        <div class="blck-label" title="Thread {{tid}}"></div>
+                        <table class="blck-parts">
+                        {% for part in blck.parts %}
+                        <tr>
+                            <td style="height: {{part.height}}%;"
+                                onmouseover="highlight_links_on('r_it_{{part.id}}', 'l_it_', {{part.links}})"
+                                onmouseout="highlight_links_off('r_it_{{part.id}}', 'l_it_', {{part.links}})"
+                                class=" procbar-part
+                                        {% if part.simscore >= 90 %}
+                                        similar90
+                                        {% elif part.simscore >= 80 %}
+                                        similar80
+                                        {% elif part.simscore >= 70 %}
+                                        similar70
+                                        {% elif part.simscore >= 60 %}
+                                        similar60
+                                        {% elif part.simscore >= 50 %}
+                                        similar50
+                                        {% elif part.simscore >= 40 %}
+                                        similar40
+                                        {% elif part.simscore >= 30 %}
+                                        similar30
+                                        {% elif part.simscore >= 20 %}
+                                        similar20
+                                        {% elif part.simscore >= 10 %}
+                                        similar10
+                                        {% else %}
+                                        similar0
+                                        {% endif %}"
+                                       data-toggle="tooltip" data-placement="top" >
+
+                                <a href="javascript:;" onclick="select_part('r_it_', '{{part.id}}', 'l_it_', {{part.links}})">
+                                    <div id="r_it_{{part.id}}" style="height:100%;width:100%">
+                                    </div>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </table>
+                    </td>
+                {% endif %}
+            {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="seq-container" id="r_it_scroll">
+            {% for tid, blck in right.sequence %}
+            <div class="blck-calls">
+            {% for part in blck.parts %}
+                <div class="part-container" id="r_it_{{part.id}}_container">
+                <table>
+                {% for args,body in part.calls %}
+                    <tr class="call_{{args.cid}} cat_{{args.cat}} seq-call">
+                        <td class="call-cat">{{body.0}}</td>
+                        <td class="call-event">{{body.1}}</td>
+                        <td class="call-body">{{body.2}}</td>
+                    </tr>
+                {% endfor %}
+                </table>
+                </div>
+            {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

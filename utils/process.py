@@ -54,6 +54,7 @@ def process(target=None, copy_path=None, task=None, report=False, auto=False):
     results["statistics"]["reporting"] = list()
     GetFeeds(results=results).run()
     RunProcessing(task=task, results=results).run()
+    #worse-dev
     RunSignatures(task=task, results=results).run()
     task_id = task["id"]
     if report:

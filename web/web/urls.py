@@ -15,6 +15,10 @@ from compare import urls as compare
 from submission import urls as submission
 from api import urls as api
 
+#worse-dev
+from compareprocs import urls as compareprocs
+from codexgigas import urls as codexgigas
+
 urlpatterns = [
     url(r"^$", dashboard_views.index, name='dashboard'),
     url(r"^admin/", include(admin.site.urls)),
@@ -29,4 +33,7 @@ urlpatterns = [
     url(r"^full_memory_strings/(?P<analysis_number>\w+)/$", analysis_views.full_memory_dump_strings, name='full_memory_dump_strings'),
     url(r"^dashboard/", include(dashboard)),
     url(r"^api/", include(api)),
+#worse-dev
+    url(r"^compareprocs/", include(compareprocs)),
+    url(r"^shared_indicators/", include(codexgigas)),
 ]

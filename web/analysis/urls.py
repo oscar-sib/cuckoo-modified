@@ -4,6 +4,8 @@
 
 from django.conf.urls import url
 from analysis import views
+from compareprocs import views as cmpviews
+from codexgigas import views as codex
 
 urlpatterns = [
     url(r"^$", views.index, name='analysis'),
@@ -24,4 +26,6 @@ urlpatterns = [
     url(r"^procdump/(?P<task_id>\d+)/(?P<process_id>\d+)/(?P<start>\w+)/(?P<end>\w+)/$", views.procdump, name='procdump'),
     url(r"^(?P<task_id>\d+)/pcapstream/(?P<conntuple>[.,\w]+)/$", views.pcapstream, name='pcapstream'),
     url(r"^(?P<task_id>\d+)/comments/$", views.comments, name='comments'),
+# worse-dev
+    url(r"^(?P<lsid>\d+)-(?P<lpid>\d+)/$", cmpviews.both, name='compareprocs'),
 ]

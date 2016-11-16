@@ -39,8 +39,12 @@ $(function() {
     {% if analysis.memory %}<li><a href="#memory" data-toggle="tab">Memory Analysis</a></li>{% endif %}
     {% if config.malheur %}
     {% if analysis.info.category == "file" or analysis.info.category == "url" %}
-    {% if similar|length %}
+    {% if similar|length and wsimilar|length %}
+        <li><a href="#similar" data-toggle="tab">Similar ({{similar|length}}+{{nsimilar}})</a></li>
+    {% elif similar|length %}
         <li><a href="#similar" data-toggle="tab">Similar ({{similar|length}})</a></li>
+    {% elif wsimilar|length %}
+        <li><a href="#similar" data-toggle="tab">Similar ({{nsimilar}})</a></li>
     {% else %}
         <li><a href="#similar" data-toggle="tab">Similar</a></li>
     {% endif %}

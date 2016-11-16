@@ -1,0 +1,20 @@
+<table class="header-table table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th class="header-cell hpid" style="width:10%">PID</th>
+            <th class="header-cell hpname" style="width:25%">Process name</th>
+            <th class="header-cell htask" style="width:10%">Task</th>
+            <th class="header-cell hsname" style="width:25%">Sample name</th>
+            <th class="header-cell hmd5" style="width:30%">MD5</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="header-cell">{{record.pid}}</td>
+            <td class="header-cell">{{record.pname}}</td>
+            <td class="header-cell">{{record.sample.info.id}}</td>
+            <td class="header-cell">{{record.sample.target.file.name}}</td>
+            <td class="header-cell"><a href="{% url "report" record.sample.info.id %}">{{record.sample.target.file.md5}}</a></td>
+        </tr>
+    </tbody>
+</table>

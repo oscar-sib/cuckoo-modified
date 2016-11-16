@@ -1,0 +1,215 @@
+/* From http://html-color-codes.info/ */
+.similar0 {
+    background: #FFFFFF;
+    color: black;
+}
+.similar10 {
+    background: #FBEFEF ;
+}
+.similar20 {
+    background: #F8E0E0;
+}
+.similar30 {
+    background: #F6CECE;
+}
+.similar40 {
+    background: #F5A9A9;
+}
+.similar50 {
+    background: #F78181;
+}
+.similar60 {
+    background: #FA5858;
+}
+.similar70 {
+    background: #FE2E2E;
+}
+.similar80 {
+    background: #FF0000;
+}
+.similar90 {
+    background: #DF0101;
+}
+/* Bar to navigate through the sequences */
+.nav-procbar {
+    background: white;
+    height: 630px;
+    padding: 0px;
+}
+.procbar-container {
+    width: 50%;
+    height: 100%;
+    float: left;
+    padding: 0 10px 0 10px;
+}
+.procbar-container.left {
+    text-align: left;
+}
+.procbar-container.right {
+    text-align: right;
+}
+.procbar {
+    height: 100%;
+    display: inline-table;
+}
+.procbar-lvl {
+    width: 10px;
+}
+.procbar-part {
+    border: 1px dotted;
+}
+/* Parts of a call sequence */
+.part-highlighted {
+    border: 2px solid blue !important;
+}
+.seq-call {
+    white-space: nowrap;
+}
+.call-highlighted {
+    background-color: aqua;
+}
+.blck-container {
+    width: 30px;
+    padding-top: 3px;
+    position: relative;
+}
+.blck-parts {
+    height: 100%;
+    width: 100%;
+    border: 1px solid;
+}
+.blck-label {
+    position: absolute;
+    top: 0px;
+    left: -5px;
+    background-color: white;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    border: 1px solid;
+}
+.blck-calls {
+    margin-bottom: 20px;
+    padding-left: 15px;
+    border-left: 1px dotted;
+}
+.part-selected {
+    border: 3px solid black !important;
+}
+.part-highlighted.part-selected {
+    border: 3px solid blue !important;
+}
+.seq-call.cat_library {
+    color: lightgrey;
+}
+/* Content pane */
+.seq-container {
+    height: 630px;
+    overflow: auto;
+}
+.part-container {
+    width: -moz-max-content;     /* Firefox/Gecko */
+    width: -webkit-max-content; /* Chrome */
+}
+.part-container.container-selected {
+    display: block;
+    border: 2px solid black;
+}
+.tid-container {
+    margin-top: 3px;
+}
+.part-container > table {
+    table-layout: fixed;
+    /*width: 100%;*/
+    width: -moz-max-content;     /* Firefox/Gecko */
+    width: -webkit-max-content; /* Chrome */
+}
+.seq-call > td {
+    overflow: hidden;
+}
+.call-cat {
+    width: 70px;
+    max-width: 70px;
+}
+.call-event {
+    width: 70px;
+    max-width: 70px;
+}
+
+/* Info Headers */
+.info-header {
+    padding: 10px 30px 20px 30px;
+}
+.header-cell {
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.header-cell.hpid {
+    width: 7% !important;
+}
+.header-cell.hpname {
+    width: 25% !important;
+}
+.header-cell.htask {
+    width: 7% !important;
+}
+.header-cell.hsname {
+    width: 25% !important;
+}
+.header-cell.hmd5 {
+    width: 36% !important;
+}
+.header-table {
+    table-layout: fixed;
+}
+/* Similar groups graph */
+.simgrp-graph {
+    width: 90%;
+    height: 200px;
+    border: 1px solid lightgrey;
+    border-radius: 5px;
+    margin: 5px auto;
+    position: relative;
+    overflow: hidden;
+    background-color: white;
+}
+.simgrp-graph > .balloon {
+   position: absolute; 
+}
+.graph-content {
+    position: absolute;
+    bottom: 45px;
+    left: 20px;
+    top: 5%;
+    right: 5%;
+    border-bottom: 1px dotted;
+}
+.balloon {
+    border-radius: 50%;
+    position: absolute;
+    border: 1px solid;
+}
+.graph-legend {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+.graph-legend > table {
+    position: relative;
+    left: 5%;
+    right: 5%;
+    width: 90%;
+    table-layout: fixed;
+}
+.graph-legend > table > tbody > tr > td {
+    text-align: center;
+}
+.graph-legend > .legend-label {
+    position: relative;
+    left: 5%;
+    text-align: center;
+    width: 95%;
+    margin-top: 5px;
+}

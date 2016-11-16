@@ -1105,6 +1105,9 @@ class ProcessTree:
 
         return self.tree
 
+#This must be included after the definition of Enhanced
+#from worseheur import Detailed
+
 class BehaviorAnalysis(Processing):
     """Behavior Analyzer."""
 
@@ -1121,7 +1124,8 @@ class BehaviorAnalysis(Processing):
             Anomaly(),
             ProcessTree(),
             Summary(),
-            Enhanced(),
+            #Enhanced(),
+            #Detailed(),
         ]
 
         # Iterate calls and tell interested signatures about them

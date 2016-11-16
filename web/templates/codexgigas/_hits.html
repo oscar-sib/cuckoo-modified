@@ -1,0 +1,29 @@
+<tr>
+    <th class="field hname">Name</th>
+    <th class="field hfrequency">Frequency</th>
+    <th class="field hvalue"> Value</th>
+</tr>
+{% for name, hits in entries.items %}
+{% for hit in hits %}
+    {% if forloop.counter0 == 0 %}
+        <tr>
+            <td class="field name" rowspan="{{hits|length}}">{{name}}</td>
+            <td class="field frequency">
+                <div class="freq-label {%if hit.relevant and hit.freq >= 80%}relevant{%endif%}">
+                    {{hit.num}}/{{total}} ({{hit.freq}}%)
+                </div>
+            </td>
+            <td class="field value">{{hit.value}}</td>
+        </tr>
+    {% else %}
+        <tr>
+            <td class="field name">
+                <div class="freq-label {%if hit.relevant and hit.freq >= 80%}relevant{%endif%}">
+                    {{hit.num}}/{{total}} ({{hit.freq}}%)
+                </div>
+            </td>
+            <td class="field value">{{hit.value}}</td>
+        </tr>
+    {% endif %}
+{% endfor %}
+{% endfor %}

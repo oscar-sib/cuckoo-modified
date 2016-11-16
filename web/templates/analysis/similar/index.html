@@ -1,3 +1,107 @@
+{% if wsimilar|length > 0 %}
+
+    <link href="{{ STATIC_URL }}css/compareprocs.css" rel="stylesheet">
+    <div class="panel">
+        <h4>Process Tree</h4>
+        <ul>
+        {% for process in analysis.behavior.processtree|proctreetolist %}
+            {% if process.startchildren %}
+            <ul>
+            {% elif process.endchildren %}
+            </ul>
+            {% else %}
+            <li>
+            <strong>{{process.name}}</strong> ({{process.pid}})
+            {% if process.commandline %}
+              <i>{{ process.commandline }}</i>
+            {% endif %}
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">Similar Processes</h3>
+        </div>
+        <table class="table table-striped" style="table-layout: fixed;">
+            {% for simtask in wsimilar %}
+                <tr>
+                    <td width="8%" rowspan="{{simtask.similar|length|add:1}}">
+                        {{simtask.pname}} ({{simtask.pid}})
+                        {% if config.codexgigas %}
+                        <br><br><a href="{% url "shared_indicators" simtask.clst_id %}">Static indicators</a>
+                        {% endif %}
+                    </td>
+                    <th width="10%" style="text-align: center;">Similarity Score</th>
+                    <th width="20%">Similar processes (total {{simtask.total}})</th>
+                    <th width="20%">Sample</th>
+                    <th width="5%">MalScore</th>
+                    <th width="8%">MalFamily</th>
+                    <th width="29%" style="text-align: center;">Near Clusters</th>
+                </tr>
+                {% for simproc in simtask.similar %}
+                <tr>
+                    <td style="text-align: center;">
+                        <span 
+                        {% if simproc.simscore >= 90 %}
+                        class="label similar90"
+                        {% elif simproc.simscore >= 80 %}
+                        class="label similar80"
+                        {% elif simproc.simscore >= 70 %}
+                        class="label similar70"
+                        {% elif simproc.simscore >= 60 %}
+                        class="label similar60"
+                        {% elif simproc.simscore >= 50 %}
+                        class="label similar50"
+                        {% else %}
+                        class="label similar0"
+                        {% endif %}
+                        >{{simproc.simscore}}</span>
+                    </td>
+                    <td>
+                        <a href="{% url "compareprocs_both" simtask.sid simtask.pid simproc.sid simproc.pid %}">
+                            <span class="mono">{{simproc.pname}} ({{simproc.pid}})</span>
+                        </a>
+                    </td>
+                    <td>
+                        {% if simproc.status == "reported" %}
+                            <a href="{% url "report" simproc.analysisid %}">
+                                <span class="mono">{{simproc.samplemd5}}</span>
+                            </a>
+                        {% else %}
+                            <span class="mono">{{simproc.samplemd5}}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if simproc.malscore != None %}
+                            <span 
+                            {% if simproc.malscore <= 2.0 %}
+                            class="label label-success"
+                            {% elif simproc.malscore <= 6.0 %}
+                            class="label label-warning"
+                            {% else %}
+                            class="label label-danger"
+                            {% endif %}
+                            >{{simproc.malscore|floatformat:1}}</span>
+                        {% else %}
+                            <span class="mono">None</span>
+                        {% endif %}
+                    </td>
+                    <td>{{simproc.malfamily}}</td>
+                    {% if forloop.counter0 == 0 %}
+                    <td rowspan="{{simtask.similar|length}}" style="text-align: center;">
+                        {% include "compareprocs/_graph.html" with balloons=simtask.balloons proc=simtask%}
+                    </td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+   </div> 
+{% endif %}
 {% if similar|length > 0 %}
     <div class="panel panel-primary">
         <div class="panel-heading">
@@ -110,6 +214,7 @@
             </tbody>
         </table>
     </div>
-{% else %}
+{% endif %}
+{% if wsimilar|length == 0 and similar|length == 0 %}
     <div class="alert alert-info" style="text-align: center;"><b>No similar analyses found.</b></div>
 {% endif %}
